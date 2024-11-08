@@ -1,0 +1,110 @@
+{% extends 'layouts/nav_inicio.html' %}
+{% load static %}
+{% block content %}
+
+<link rel="stylesheet" type="text/css" href="{% static 'css/inicio.css' %}">
+<div class="inicio">
+    <div class="form">
+        <h1>Materias</h1>
+        {% if materias %}
+            {% for materia in materias %}
+                <p style="font-size: 30px; color:#611232;">{{ materia.nombre }}</p>
+                
+                <div style="margin-left: 15%;">
+                    {% if ramas %}
+                        {% for rama in ramas %}
+                            {% if rama.idMateria.id == materia.id %}
+                                <p style="font-size: 16px; color:black;">{{ rama.nombre }}</p>
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+        
+                    <button class="agregar_rama" style="width: 50px;" data-materia-id="{{ materia.id }}">+</button>
+        
+                    <div class="nueva_rama_container" id="nueva_rama_container_{{ materia.id }}" style="display: none; margin-top: 20px;">
+                        <input type="text" class="nueva_rama" placeholder="Nombre de la rama"/>
+                        <button class="guardar_rama" data-materia-id="{{ materia.id }}">Guardar Rama</button>
+                    </div>
+                </div>
+                
+            {% endfor %}
+        {% endif %}
+        <button id="agregar_materia" style="width: 50px;">+</button>
+    
+        <div id="nueva_materia_container" style="display: none; margin-top: 10px;">
+            <input type="text" id="nueva_materia" placeholder="Nombre de la materia"/>
+            <button id="guardar_materia">Guardar materia</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById("agregar_materia").addEventListener("click", function(){
+        let contenedor = document.getElementById("nueva_materia_container");
+        if (contenedor.style.display=="none"){
+            contenedor.style.display = "block";
+        }else{
+            contenedor.style.display = "none";
+        }
+    });
+
+    document.getElementById("guardar_materia").addEventListener("click", function(){
+        const nombreMateria = document.getElementById("nueva_materia").value;
+        fetch("{% url 'agregar_materia' %}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": "{{ csrf_token }}"
+            },
+            body: JSON.stringify({ nombre: nombreMateria })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success){
+                location.reload();
+            } else {
+                alert("Error al agregar la materia");
+            }
+        }).catch(error => console.error("Error:", error));
+    });
+
+    // Event listener para mostrar el contenedor de agregar rama
+    document.querySelectorAll(".agregar_rama").forEach(button => {
+        button.addEventListener("click", function() {
+            const idMateria = this.getAttribute("data-materia-id");
+            let contenedor = document.getElementById(`nueva_rama_container_${idMateria}`);
+            if (contenedor.style.display=="none"){
+                contenedor.style.display = "block";
+            }else{
+                contenedor.style.display = "none";
+            }
+        });
+    });
+
+    // Event listener para guardar la rama
+    document.querySelectorAll(".guardar_rama").forEach(button => {
+        button.addEventListener("click", function() {
+            const idMateria = this.getAttribute("data-materia-id");
+            const nombreRama = document.querySelector(`#nueva_rama_container_${idMateria} .nueva_rama`).value;
+
+            fetch("{% url 'agregar_rama' %}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": "{{ csrf_token }}"
+                },
+                body: JSON.stringify({ nombre: nombreRama, idMateria: idMateria })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success){
+                    location.reload();
+                } else {
+                    alert("Error al agregar la rama");
+                }
+            }).catch(error => console.error("Error:", error));
+        });
+    });
+</script>
+
+{% endblock %}
