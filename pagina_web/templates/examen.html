@@ -1,0 +1,143 @@
+{% extends 'layouts/nav_inicio.html' %}
+{% load static %}
+{% block content %}
+
+<link rel="stylesheet" type="text/css" href="{% static 'css/examen.css' %}">
+
+<div class="examen">
+    <h1>{{examen.nombre}}</h1>
+    <p style="font-size: 30px; color:#611232;">Preguntas</p>
+    <button id="abrirDialog" class="boton_amarillo">Agregar pregunta</button>
+
+    <dialog id="dialogPregunta">
+        <h2>Pregunta</h2>
+        <input type="text" id="inputPregunta" name="inputPregunta" placeholder="Pregunta" style="width: 80%;">
+
+        <br>
+        <br>
+
+        <h2>Respuestas</h2>
+        <div class="div_respuestas">
+            <label for="respuesta1">A)</label>
+            <input type="text" id="respuesta1" name="respuesta1">
+            <input type="radio" class="btn-check" name="radioButtons" id="radio1" value="respuesta1" autocomplete="off" checked>
+            <label class="btn btn-outline-success" for="radio1">Correcta</label>
+
+            <br>
+            <br>
+
+            <label for="respuesta2">B)</label>
+            <input type="text" id="respuesta2" name="respuesta2">
+            <input type="radio" class="btn-check" name="radioButtons" id="radio2"  value="respuesta2" autocomplete="off">
+            <label class="btn btn-outline-success" for="radio2">Correcta</label>
+
+            <br>
+            <br>
+
+            <label for="respuesta3">C)</label>
+            <input type="text" id="respuesta3" name="respuesta3">
+            <input type="radio" class="btn-check" name="radioButtons" id="radio3"  value="respuesta3" autocomplete="off">
+            <label class="btn btn-outline-success" for="radio3">Correcta</label>
+
+            <br>
+            <br>
+
+            <label for="respuesta4">D)</label>
+            <input type="text" id="respuesta4" name="respuesta4">
+            <input type="radio" class="btn-check" name="radioButtons" id="radio4"  value="respuesta4" autocomplete="off">
+            <label class="btn btn-outline-success" for="radio4">Correcta</label>
+
+            <br>
+            <br>
+
+            <label for="idRama">Seleccionar Rama</label>
+            <select id="idRama" name="idRama">
+                {% for rama in ramas %}
+                    <option value="{{rama.id}}">{{rama.nombre}}</option>
+                {% endfor %}
+            </select>
+
+            <input id="idExamen" value="{{examen.id}}" name="idExamen" hidden/>
+
+            <br>
+            <br>
+
+            <button id="cerrarDialog" class="boton_cerrar">Cerrar</button>
+            <button id="guardar_pregunta" class="boton_guardar">Guardar</button>
+
+        </div>
+
+    </dialog>
+    {% if preguntas %}
+        {% for pregunta in preguntas %}
+            <p style="font-size: 18px;"><strong>{{ forloop.counter }}) {{ pregunta.descripcion }}</strong></p>
+            <div class="respuestas" style="margin-left: 10%;">
+                {% for respuesta in pregunta.respuestas %}
+                    <div class="respuesta" >
+                        <strong>{% cycle 'A' 'B' 'C' 'D' as letra %})</strong> 
+                        {{ respuesta.descripcion }}
+                        
+                        {% if respuesta.esCorrecta %}
+                            <span style=" color: rgb(27, 139, 27);">- Respuesta Correcta</span>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endfor %}
+    {% endif %}
+</div>
+
+
+<script>
+    const dialog = document.getElementById('dialogPregunta');
+    const abrirDialog = document.getElementById('abrirDialog');
+    const cerrarDialog = document.getElementById('cerrarDialog');
+    const guardarPregunta = document.getElementById('guardarPregunta');
+
+    abrirDialog.onclick = function() {
+        dialog.showModal(); 
+    };
+
+    cerrarDialog.onclick = function() {
+        dialog.close();
+    };
+
+    document.getElementById("guardar_pregunta").addEventListener("click", function(){
+        const idExamen = document.getElementById("idExamen").value;
+        const descripcionPregunta = document.getElementById("inputPregunta").value;
+        const respuesta1 = document.getElementById("respuesta1").value;
+        const respuesta2 = document.getElementById("respuesta2").value;
+        const respuesta3 = document.getElementById("respuesta3").value;
+        const respuesta4 = document.getElementById("respuesta4").value;
+        const idRama = document.getElementById("idRama").value;
+        const correcta = document.querySelector('input[name = radioButtons]:checked').value;
+        alert(descripcionPregunta);
+        fetch("{% url 'agregar_pregunta' %}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": "{{ csrf_token }}"
+            },
+            body: JSON.stringify({idExamen:idExamen,
+                                    descripcionPregunta: descripcionPregunta,
+                                    respuesta1:respuesta1,
+                                    respuesta2:respuesta2,
+                                    respuesta3:respuesta3,
+                                    respuesta4:respuesta4,
+                                    idRama:idRama,
+                                    correcta:correcta
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success){
+                location.reload();
+            } else {
+                alert("Error al agregar la materia");
+            }
+        }).catch(error => console.error("Error:", error));
+    });
+
+</script>
+
+{% endblock %}

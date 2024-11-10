@@ -3,42 +3,107 @@
 {% block content %}
 
 <link rel="stylesheet" type="text/css" href="{% static 'css/inicio.css' %}">
-<div class="inicio">
-    <div class="form">
-        <h1>Materias</h1>
-        {% if materias %}
-            {% for materia in materias %}
-                <p style="font-size: 30px; color:#611232;">{{ materia.nombre }}</p>
-                
-                <div style="margin-left: 15%;">
-                    {% if ramas %}
-                        {% for rama in ramas %}
-                            {% if rama.idMateria.id == materia.id %}
-                                <p style="font-size: 16px; color:black;">{{ rama.nombre }}</p>
-                            {% endif %}
-                        {% endfor %}
-                    {% endif %}
-        
-                    <button class="agregar_rama" style="width: 50px;" data-materia-id="{{ materia.id }}">+</button>
-        
-                    <div class="nueva_rama_container" id="nueva_rama_container_{{ materia.id }}" style="display: none; margin-top: 20px;">
-                        <input type="text" class="nueva_rama" placeholder="Nombre de la rama"/>
-                        <button class="guardar_rama" data-materia-id="{{ materia.id }}">Guardar Rama</button>
-                    </div>
+
+<div class="materias">
+    <h1>Materias</h1>
+    {% if materias %}
+        {% for materia in materias %}
+            <p style="font-size: 30px; color:#611232;">{{ materia.nombre }}</p>
+            
+            <div style="margin-left: 15%;">
+                {% for rama in materia.ramas %}
+                            <p style="font-size: 16px; color:black;">{{ rama.nombre }}</p>
+                {% endfor %}
+                <button class="agregar_rama" style="width: 50px;" data-materia-id="{{ materia.id }}">+</button>
+                <div class="nueva_rama_container" id="nueva_rama_container_{{ materia.id }}" style="display: none; margin-top: 20px;">
+                    <input type="text" class="nueva_rama" placeholder="Nombre" required/>
+                    <button class="guardar_rama" data-materia-id="{{ materia.id }}">Guardar Rama</button>
                 </div>
-                
-            {% endfor %}
-        {% endif %}
-        <button id="agregar_materia" style="width: 50px;">+</button>
-    
-        <div id="nueva_materia_container" style="display: none; margin-top: 10px;">
-            <input type="text" id="nueva_materia" placeholder="Nombre de la materia"/>
-            <button id="guardar_materia">Guardar materia</button>
-        </div>
+            </div>
+            
+        {% endfor %}
+    {% endif %}
+    <br>
+    <button id="agregar_materia" style="width: 50px;">+</button>
+
+    <div id="nueva_materia_container" style="display: none; margin-top: 10px;">
+        <input type="text" id="nueva_materia" placeholder="Nombre" required/>
+        <button id="guardar_materia">Guardar materia</button>
     </div>
 </div>
 
+<div class="examenes">
+    <h1>Examenes</h1>
+
+    {% if examenes %}
+        {% for examen in examenes %}
+            <p style="font-size: 30px; color:#611232;">{{examen.nombre}}</p>
+            <div style="margin-left: 10%;">
+                <p style="font-size: 20px; color:#63470b;">Materia: {{examen.idMateria.nombre}}</p>
+                <a href="examen/{{examen.id}}">Ver preguntas</a>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <br>
+    <button id="abrirDialog" class="boton_amarillo">Agregar examen</button>
+
+    <dialog id="dialogExamen">
+        <h2>Agrega los datos del examen</h2>
+        <br>
+        <input type="text" id="nombre_examen" placeholder="Nombre" required/>
+        <br>
+        <br>
+        <select id="materia_examen">
+            {% for materia in materias %}
+                <option value="{{materia.id}}">{{materia.nombre}}</option>
+            {% endfor %}
+        </select>
+        <br>
+        <br>
+        <button id="cerrarDialog" class="boton_cerrar">Cerrar</button>
+        <button id="guardar_examen" class="boton_guardar">Guardar</button>
+        
+    </dialog>
+</div>
+
 <script>
+
+    //Agregar examen
+    const abrirDialog = document.getElementById('abrirDialog');
+    const dialogExamen = document.getElementById('dialogExamen');
+    const cerrarDialog = document.getElementById('cerrarDialog');
+
+    abrirDialog.addEventListener('click', () => {
+        dialogExamen.showModal(); 
+    });
+
+    cerrarDialog.addEventListener('click', () => {
+        dialogExamen.close(); 
+    });
+
+    document.getElementById("guardar_examen").addEventListener("click", function(){
+        const nombreExamen = document.getElementById("nombre_examen").value;
+        const materiaExamen = document.getElementById("materia_examen").value;
+        fetch("{% url 'agregar_examen' %}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": "{{ csrf_token }}"
+            },
+            body: JSON.stringify({ nombre: nombreExamen, idMateria: materiaExamen })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success){
+                location.reload();
+            } else {
+                alert("Error al agregar el examen");
+            }
+        }).catch(error => console.error("Error:", error));
+    });
+
+    //Agregar materia
     document.getElementById("agregar_materia").addEventListener("click", function(){
         let contenedor = document.getElementById("nueva_materia_container");
         if (contenedor.style.display=="none"){
@@ -68,7 +133,7 @@
         }).catch(error => console.error("Error:", error));
     });
 
-    // Event listener para mostrar el contenedor de agregar rama
+    //Agregar rama
     document.querySelectorAll(".agregar_rama").forEach(button => {
         button.addEventListener("click", function() {
             const idMateria = this.getAttribute("data-materia-id");
@@ -81,12 +146,10 @@
         });
     });
 
-    // Event listener para guardar la rama
     document.querySelectorAll(".guardar_rama").forEach(button => {
         button.addEventListener("click", function() {
             const idMateria = this.getAttribute("data-materia-id");
             const nombreRama = document.querySelector(`#nueva_rama_container_${idMateria} .nueva_rama`).value;
-
             fetch("{% url 'agregar_rama' %}", {
                 method: "POST",
                 headers: {
@@ -105,6 +168,7 @@
             }).catch(error => console.error("Error:", error));
         });
     });
+
 </script>
 
 {% endblock %}

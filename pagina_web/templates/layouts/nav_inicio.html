@@ -15,21 +15,18 @@
     <header>
         <nav class="menu">
             <label for="" class="breand">
-                <img  style = "width: 120px; height: 60px; margin-left: 20px; line-height: 60px;" src="{% static 'images/image.png' %}">
-
+                <a href="/">
+                    <img  style = "width: 120px; height: 60px; margin-left: 20px; line-height: 60px;" src="{% static 'images/image.png' %}">
+                </a>
             </label>
             <ul>
-
-
                 <li style="margin-left: 400px;" >
                     <p>|</p>
                 </li>
                 <li>
                     <a href="#" id="salir" onclick="document.getElementById('cerrarSesion').submit()">Cerrar sesion</a>
                 </li>
-                
             </ul>
-        
         </nav>
     </header>
     <form method="post" action="{% url 'logout' %}" id="cerrarSesion">{% csrf_token %}</form>

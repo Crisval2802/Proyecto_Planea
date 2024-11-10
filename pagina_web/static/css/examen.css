@@ -1,15 +1,15 @@
-.materias {
+.examen {
     float: left;
     background: #FFFFFF;
-    width: 30%;
+    width: 90%;
     margin-top: 3%;
     margin-bottom: 3%;
-    margin-left: 3%;
+    margin-left: 5%;
     padding: 30px;
     box-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.2), 0 5px 5px 0 rgba(0, 0, 0, 0.24);
 }
 
-.materias input {
+.examen input {
     font-family: "Roboto", sans-serif;
     outline: 0;
     background: #f2f2f2;
@@ -20,46 +20,6 @@
     font-size: 14px;
 }
 
-.materias button {
-    font-family: "Roboto", sans-serif;
-    text-transform: uppercase;
-    outline: 0;
-    background: #A57F2C;
-    border: 0;
-    padding: 15px;
-    color: #FFFFFF;
-    font-size: 14px;
-    -webkit-transition: all 0.3 ease;
-    transition: all 0.3 ease;
-    cursor: pointer;
-}
-
-.materias button:hover,.materias button:active,.materias button:focus {
-    background: #B2924B;
-}
-
-.examenes {
-    float: right;
-    background: #FFFFFF;
-    width: 60%;
-    margin-top: 3%;
-    margin-bottom: 3%;
-    margin-right: 3%;
-    padding: 30px;
-    box-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.2), 0 5px 5px 0 rgba(0, 0, 0, 0.24);
-    overflow: hidden;
-}
-
-.examenes input {
-    font-family: "Roboto", sans-serif;
-    outline: 0;
-    background: #f2f2f2;
-    width: 70%;
-    border: 0;
-    padding: 15px;
-    box-sizing: border-box;
-    font-size: 14px;
-}
 
 .boton_amarillo {
     font-family: "Roboto", sans-serif;
@@ -81,8 +41,12 @@
 
 dialog {
     padding: 20px;
-    width: 50%;
+    width: 80%;
     text-align: center;
+}
+
+.div_respuestas input{
+    width: 70%;
 }
 
 .boton_cerrar {
@@ -119,15 +83,4 @@ dialog {
 
 .boton_guardar:hover,.boton_guardar:active,.boton_guardar:focus {
     background: #118b40;
-}
-
-.examenes select {
-    font-family: "Roboto", sans-serif;
-    outline: 0;
-    background: #f2f2f2;
-    width: 40%;
-    border: 0;
-    padding: 15px;
-    box-sizing: border-box;
-    font-size: 14px;
 }
