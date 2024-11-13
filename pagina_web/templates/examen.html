@@ -5,7 +5,7 @@
 <link rel="stylesheet" type="text/css" href="{% static 'css/examen.css' %}">
 
 <div class="examen">
-    <h1>{{examen.nombre}}</h1>
+    <h1>{{examen.nombre}} - {{examen.idMateria.nombre}}</h1>
     <p style="font-size: 30px; color:#611232;">Preguntas</p>
     <button id="abrirDialog" class="boton_amarillo">Agregar pregunta</button>
 
@@ -70,7 +70,7 @@
     </dialog>
     {% if preguntas %}
         {% for pregunta in preguntas %}
-            <p style="font-size: 18px;"><strong>{{ forloop.counter }}) {{ pregunta.descripcion }}</strong></p>
+            <p style="font-size: 18px;"><strong>{{ forloop.counter }}) {{ pregunta.descripcion }} - ({{pregunta.idRama.nombre}})</strong></p>
             <div class="respuestas" style="margin-left: 10%;">
                 {% for respuesta in pregunta.respuestas %}
                     <div class="respuesta" >

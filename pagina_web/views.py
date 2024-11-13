@@ -5,8 +5,11 @@ from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.contrib.admin.views.decorators import staff_member_required
 from django.db.models import Prefetch
-from .models import examen, materia, pregunta, rama, respuesta
+from django.contrib.auth.models import User
+from .models import examen, materia, pregunta, rama, respuesta, alumno
 from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.http import HttpResponse
 import json
 
 class Login(View):
@@ -42,7 +45,7 @@ class Examen(View):
         if resultado:
             auxExamen = examen.objects.get(id=id)
             respuestas_prefetch = Prefetch('respuesta_set', queryset=respuesta.objects.all(), to_attr='respuestas')
-            preguntas = pregunta.objects.filter(idExamen_id=auxExamen.id).prefetch_related(respuestas_prefetch).all()
+            preguntas = pregunta.objects.filter(idExamen_id=auxExamen.id).prefetch_related(respuestas_prefetch).all() #.order_by("idRama")
             ramas = rama.objects.filter(idMateria_id=auxExamen.idMateria).values
             return render(request, 'examen.html', {"examen": auxExamen, "preguntas": preguntas, "ramas": ramas})
         return redirect('/')
@@ -53,6 +56,7 @@ class Logout(View):
         logout(request)
         return redirect('login')
     
+@method_decorator(staff_member_required(login_url='login'), name='dispatch')
 def agregar_materia(request):
     if request.method == "POST":
         data = json.loads(request.body)
@@ -62,6 +66,7 @@ def agregar_materia(request):
             nueva_materia.save()
             return JsonResponse({"success": True})
         
+@method_decorator(staff_member_required(login_url='login'), name='dispatch')
 def agregar_rama(request):
     if request.method == "POST":
         data = json.loads(request.body)
@@ -71,7 +76,8 @@ def agregar_rama(request):
             nueva_rama = rama(nombre=nombre, idMateria_id=idMateria)
             nueva_rama.save()
             return JsonResponse({"success": True})
-        
+
+@method_decorator(staff_member_required(login_url='login'), name='dispatch')        
 def agregar_examen(request):
     if request.method == "POST":
         data = json.loads(request.body)
@@ -81,7 +87,8 @@ def agregar_examen(request):
             nuevo_examen = examen(nombre=nombre, idMateria_id=idMateria)
             nuevo_examen.save()
             return JsonResponse({"success": True})
-        
+
+@method_decorator(staff_member_required(login_url='login'), name='dispatch')        
 def agregar_pregunta(request):
     if request.method == "POST":
         data = json.loads(request.body)
@@ -122,3 +129,47 @@ def agregar_pregunta(request):
         nueva_respuesta.save()
         
         return JsonResponse({"success": True})
+    
+
+class RegistrarUsuario(View):
+
+    def get(self, request):
+        return render(request, 'registrar_usuario.html')
+    
+    def post (self,request):
+        username = request.POST.get('username')
+        email = request.POST.get('email')
+        password = request.POST.get('password')
+        if User.objects.filter(username=username).exists():
+            datos={'message': "Error, ya existe un registro con ese username"}
+            return render(request, 'registrar_usuario.html' , {"datos":datos})
+        else:
+            user = User.objects.create_user(username, email, password)
+            user.is_superuser=True
+            user.is_staff=True
+            user.save()
+            return redirect("login")
+
+class API_CrearUsuario(View):
+    @method_decorator(csrf_exempt)
+    def dispatch(self, request, *args, **kwargs) -> HttpResponse:
+        return super().dispatch(request, *args, **kwargs)
+    
+    def post (self,request):
+        jd=json.loads(request.body)
+        nombre=jd["nombre"]
+        apellido=jd["apellido"]
+        username = jd["username"]
+        email = jd["email"]
+        password = jd["email"]
+        if User.objects.filter(username=username).exists():
+            datos={'message': "Error, ya existe un registro con ese username"}
+            return render(request, 'registrar_usuario.html' , {"datos":datos})
+        else:
+            user = User.objects.create_user(username, email, password)
+            user.is_superuser=False
+            user.is_staff=False
+            user.save()
+            nuevoAlumno = alumno(nombre=nombre, apellido=apellido)
+            nuevoAlumno.save()
+            return redirect("login")

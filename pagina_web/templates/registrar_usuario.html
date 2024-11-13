@@ -4,11 +4,11 @@
 <link rel="stylesheet" type="text/css" href="{% static 'css/login.css' %}">
 <div class="login">
     <div class="form">
-        <h1 style="color: #611232;">INICIO DE SESIÓN</h1>
+        <h1 style="color: #611232;">REGISTRARME</h1>
 
         <img  style = "width: 250px; height: 150px; margin-bottom: 10%;" src="{% static 'images/planea.png' %}">
 
-        <form method="post" action="{% url 'login' %}">
+        <form method="post" action="{% url 'registrar' %}">
             {% csrf_token %}
     
             {% if datos %}
@@ -19,12 +19,12 @@
     
             <input type="text" placeholder="Usuario" name="username" required/>
             <br>
+            <input type="email" placeholder="Correo" name="email" required/>
+            <br>
             <input type="password" placeholder="Contraseña" name="password" required />
             <br>
-            <button>Entrar</button>
-            <br>
-            <br>
-            <a href="registrar">Registrarme</a>
+            
+            <button>Enviar</button>
         </form>
     </div>
 </div>
