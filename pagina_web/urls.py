@@ -1,7 +1,9 @@
 from django.urls import path
 from django.conf import settings
 from django.conf.urls.static import static
-from .views import API_CrearUsuario, Inicio, Login, Logout, RegistrarUsuario, agregar_examen, agregar_materia, agregar_pregunta, agregar_rama, Examen
+from .views import API_CrearUsuario, API_Examen, API_Inicio, Inicio, Login, Logout, RegistrarUsuario, agregar_examen, agregar_materia, agregar_pregunta, agregar_rama, Examen
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+
 urlpatterns=[ 
     #URLS de vistas para usarlas desde las templates de DJANGO 
     path('login', Login.as_view(), name='login'),
@@ -15,5 +17,9 @@ urlpatterns=[
     path('agregar_pregunta', agregar_pregunta, name="agregar_pregunta"),
     
     #URLS de la api para consumirlas desde flutter
-    path('api/', API_CrearUsuario.as_view(), name="agregar_rama")
+    path('api/registrar', API_CrearUsuario.as_view(), name="api_agregar_usuario"),
+    path('api/inicio', API_Inicio.as_view(), name='api_inicio'),
+    path('api/examen/<int:id>', API_Examen.as_view(), name='api_examen'),
+    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 ]

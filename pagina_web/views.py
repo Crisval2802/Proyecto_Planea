@@ -1,3 +1,4 @@
+from django.forms import model_to_dict
 from django.shortcuts import redirect, render
 from django.views import View
 from django.contrib.auth import authenticate, login, logout
@@ -10,10 +11,16 @@ from .models import examen, materia, pregunta, rama, respuesta, alumno
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse
+from django.core.serializers import serialize
+
 import json
 
-class Login(View):
 
+from .decorators import token_required
+from django.utils.decorators import method_decorator
+
+#Clases y funciones para la aplicacion web
+class Login(View):
     def get(self, request):
         return render(request, 'login.html')
 
@@ -28,9 +35,7 @@ class Login(View):
             datos={'message': "Credenciales incorrectas"}
             return render(request, 'login.html' , {"datos":datos})
 
-
 class Inicio(View):
-    
     @method_decorator(staff_member_required(login_url='login'), name='dispatch')
     def get(self, request):
         ramas_prefetch = Prefetch('rama_set', queryset=rama.objects.all(), to_attr='ramas')
@@ -50,13 +55,12 @@ class Examen(View):
             return render(request, 'examen.html', {"examen": auxExamen, "preguntas": preguntas, "ramas": ramas})
         return redirect('/')
 
-    
 class Logout(View):
     def post(self, request):
         logout(request)
         return redirect('login')
     
-@method_decorator(staff_member_required(login_url='login'), name='dispatch')
+@method_decorator(staff_member_required(login_url='login'), name='dispatch') #decorador que exige que el usuario logeado sea staff
 def agregar_materia(request):
     if request.method == "POST":
         data = json.loads(request.body)
@@ -130,7 +134,6 @@ def agregar_pregunta(request):
         
         return JsonResponse({"success": True})
     
-
 class RegistrarUsuario(View):
 
     def get(self, request):
@@ -150,6 +153,7 @@ class RegistrarUsuario(View):
             user.save()
             return redirect("login")
 
+#APIS para la aplicacion de flutter
 class API_CrearUsuario(View):
     @method_decorator(csrf_exempt)
     def dispatch(self, request, *args, **kwargs) -> HttpResponse:
@@ -173,3 +177,29 @@ class API_CrearUsuario(View):
             nuevoAlumno = alumno(nombre=nombre, apellido=apellido)
             nuevoAlumno.save()
             return redirect("login")
+        
+class API_Inicio(View):
+    #@method_decorator(token_required)
+    def get(self, request):
+        examenes = examen.objects.all().values().order_by("id")
+        examenes = list(examenes)
+        return JsonResponse({'message': "Bienvenido", "examenes": examenes})
+
+class API_Examen(View):
+    #@method_decorator(token_required)
+    def get(self, request, id=0):
+        if (id!=0):
+            auxExamen = examen.objects.get(id=id)
+            respuestas_prefetch = Prefetch('respuesta_set', queryset=respuesta.objects.all(), to_attr='respuestas')
+            preguntas = pregunta.objects.filter(idExamen_id=auxExamen.id).prefetch_related(respuestas_prefetch) #.order_by("idRama")
+            auxExamen = model_to_dict(auxExamen)
+
+            #Las respuestas se deben empalmar aparte para poder devolverlas en un json
+            preguntas_list = []
+            for auxPregunta in preguntas:
+                pregunta_dict = model_to_dict(auxPregunta)
+                pregunta_dict['respuestas'] = [model_to_dict(resp) for resp in auxPregunta.respuestas]
+                preguntas_list.append(pregunta_dict)
+            return JsonResponse({'message': "Bienvenido", "examen": auxExamen, "preguntas": preguntas_list})
+        else:
+            return JsonResponse({'message': "Error, debe proporcionar un id"})
