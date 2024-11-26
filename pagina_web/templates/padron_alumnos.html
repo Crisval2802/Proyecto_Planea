@@ -1,0 +1,77 @@
+{% extends 'layouts/nav_inicio.html' %}
+{% load static %}
+{% block content %}
+
+<link rel="stylesheet" type="text/css" href="{% static 'css/padron_alumnos.css' %}">
+
+<div class="alumnos">
+    <h1>Alumnos</h1>
+    <br>
+    <button id="abrirDialog" class="boton_amarillo">Agregar alumno</button>
+    <br>
+    <br>
+    {% if alumnos %}
+        {% for alumno in alumnos %}
+            <p style="font-size: 30px; color:#611232;">{{ alumno.nombre }}  {{alumno.apellido}}</p>
+            <p style="font-size: 20px; color:#611232;margin-left: 15%;">Usuario: {{ alumno.idUsuario.username }}</p>
+            <br>
+        {% endfor %}
+    {% endif %}
+    <dialog id="dialogAlumno">
+        <h2>Agrega los datos del examen</h2>
+        <br>
+        <input type="text" id="nombre_alumno" placeholder="Nombre" required/>
+        <br>
+        <br>
+        <input type="text" id="apellido_alumno" placeholder="Apellido" required/>
+        <br>
+        <br>
+        <input type="text" id="username_alumno" placeholder="Nombre de usuario" required/>
+        <br>
+        <br>
+        <input type="password" id="password_alumno" placeholder="Contraseña" required/>
+        <br>
+        <br>
+        <button id="cerrarDialog" class="boton_cerrar">Cerrar</button>
+        <button id="guardar_alumno" class="boton_guardar">Guardar</button>
+    </dialog>
+</div>
+
+<script>
+    const abrirDialog = document.getElementById('abrirDialog');
+    const cerrarDialog = document.getElementById('cerrarDialog');
+    const dialogAlumno = document.getElementById('dialogAlumno');
+
+    abrirDialog.addEventListener('click', () => {
+        dialogAlumno.showModal(); 
+    });
+
+    cerrarDialog.addEventListener('click', () => {
+        dialogAlumno.close(); 
+    });
+
+    document.getElementById("guardar_alumno").addEventListener("click", function(){
+        const nombreAlumno = document.getElementById("nombre_alumno").value;
+        const apellidoAlumno = document.getElementById("apellido_alumno").value;
+        const usernameAlumno = document.getElementById("username_alumno").value;
+        const passwordAlumno = document.getElementById("password_alumno").value;
+        fetch("{% url 'registrar_alumno' %}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": "{{ csrf_token }}"
+            },
+            body: JSON.stringify({ nombre: nombreAlumno, apellido: apellidoAlumno, username:usernameAlumno, password:passwordAlumno})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success){
+                location.reload();
+            } else {
+                alert("Error al agregar el alumno");
+            }
+        }).catch(error => console.error("Error:", error));
+    });
+</script>
+
+{% endblock %}

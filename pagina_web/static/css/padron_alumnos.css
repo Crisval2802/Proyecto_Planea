@@ -1,0 +1,112 @@
+.alumnos {
+    float: left;
+    background: #FFFFFF;
+    width: 90%;
+    margin-top: 3%;
+    margin-bottom: 3%;
+    margin-left: 3%;
+    padding: 30px;
+    box-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.2), 0 5px 5px 0 rgba(0, 0, 0, 0.24);
+}
+
+.alumnos input {
+    font-family: "Roboto", sans-serif;
+    outline: 0;
+    background: #f2f2f2;
+    width: 90%;
+    border: 0;
+    padding: 15px;
+    box-sizing: border-box;
+    font-size: 14px;
+}
+
+.alumnos button {
+    font-family: "Roboto", sans-serif;
+    text-transform: uppercase;
+    outline: 0;
+    background: #A57F2C;
+    border: 0;
+    padding: 15px;
+    color: #FFFFFF;
+    font-size: 14px;
+    -webkit-transition: all 0.3 ease;
+    transition: all 0.3 ease;
+    cursor: pointer;
+}
+
+.alumnos button:hover,.alumnos button:active,.alumnos button:focus {
+    background: #B2924B;
+}
+
+
+
+.boton_amarillo {
+    font-family: "Roboto", sans-serif;
+    text-transform: uppercase;
+    outline: 0;
+    background: #A57F2C;
+    border: 0;
+    padding: 15px;
+    color: #FFFFFF;
+    font-size: 14px;
+    -webkit-transition: all 0.3 ease;
+    transition: all 0.3 ease;
+    cursor: pointer;
+}
+
+.boton_amarillo:hover,.boton_amarillo:active,.boton_amarillo:focus {
+    background: #B2924B;
+}
+
+dialog {
+    padding: 20px;
+    width: 50%;
+    text-align: center;
+}
+
+.boton_cerrar {
+    font-family: "Roboto", sans-serif;
+    text-transform: uppercase;
+    outline: 0;
+    background: #ca0303;
+    border: 0;
+    padding: 15px;
+    color: #FFFFFF;
+    font-size: 14px;
+    -webkit-transition: all 0.3 ease;
+    transition: all 0.3 ease;
+    cursor: pointer;
+}
+
+.boton_cerrar:hover,.boton_cerrar:active,.boton_cerrar:focus {
+    background: #d42b2b;
+}
+
+.boton_guardar {
+    font-family: "Roboto", sans-serif;
+    text-transform: uppercase;
+    outline: 0;
+    background: #005f15;
+    border: 0;
+    padding: 15px;
+    color: #FFFFFF;
+    font-size: 14px;
+    -webkit-transition: all 0.3 ease;
+    transition: all 0.3 ease;
+    cursor: pointer;
+}
+
+.boton_guardar:hover,.boton_guardar:active,.boton_guardar:focus {
+    background: #118b40;
+}
+
+.examenes select {
+    font-family: "Roboto", sans-serif;
+    outline: 0;
+    background: #f2f2f2;
+    width: 40%;
+    border: 0;
+    padding: 15px;
+    box-sizing: border-box;
+    font-size: 14px;
+}
