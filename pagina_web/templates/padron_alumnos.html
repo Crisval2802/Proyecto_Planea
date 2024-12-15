@@ -4,6 +4,21 @@
 
 <link rel="stylesheet" type="text/css" href="{% static 'css/padron_alumnos.css' %}">
 
+<style>
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    th, td {
+        border: 1px solid black;
+        padding: 8px;
+        text-align: center;
+    }
+    th {
+        background-color: #f4f4f4;
+    }
+</style>
+
 <div class="alumnos">
     <h1>Alumnos</h1>
     <br>
@@ -13,29 +28,51 @@
     {% if alumnos %}
         {% for alumno in alumnos %}
             <p style="font-size: 30px; color:#611232;">{{ alumno.nombre }}  {{alumno.apellido}}</p>
-            <p style="font-size: 20px; color:#611232;margin-left: 15%;">Usuario: {{ alumno.idUsuario.username }}</p>
-            <br>
+            <p style="font-size: 20px; color:#611232;margin-left: 15%;">Usuario: {{ alumno.usuario }}</p>
+            {% if alumno.intentos %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Examen</th>
+                            <th>Cantidad de Intentos</th>
+                            <th>Calificación Máxima</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for intento in alumno.intentos %}
+                        <tr>
+                            <td>{{ intento.examen }}</td>
+                            <td>{{ intento.cantidad_intentos }}</td>
+                            <td>{{ intento.calificacion_maxima }}</td>
+                            <td><a  href='/reporte/alumno/{{alumno.id}}/{{intento.id}}'> Visualizar reporte </a></td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
         {% endfor %}
     {% endif %}
-    <dialog id="dialogAlumno">
-        <h2>Agrega los datos del examen</h2>
-        <br>
-        <input type="text" id="nombre_alumno" placeholder="Nombre" required/>
-        <br>
-        <br>
-        <input type="text" id="apellido_alumno" placeholder="Apellido" required/>
-        <br>
-        <br>
-        <input type="text" id="username_alumno" placeholder="Nombre de usuario" required/>
-        <br>
-        <br>
-        <input type="password" id="password_alumno" placeholder="Contraseña" required/>
-        <br>
-        <br>
-        <button id="cerrarDialog" class="boton_cerrar">Cerrar</button>
-        <button id="guardar_alumno" class="boton_guardar">Guardar</button>
-    </dialog>
 </div>
+
+<dialog id="dialogAlumno">
+    <h2>Agrega los datos del alumno</h2>
+    <br>
+    <input type="text" id="nombre_alumno" placeholder="Nombre" required/>
+    <br>
+    <br>
+    <input type="text" id="apellido_alumno" placeholder="Apellido" required/>
+    <br>
+    <br>
+    <input type="text" id="username_alumno" placeholder="Nombre de usuario" required/>
+    <br>
+    <br>
+    <input type="password" id="password_alumno" placeholder="Contraseña" required/>
+    <br>
+    <br>
+    <button id="cerrarDialog" class="boton_cerrar">Cerrar</button>
+    <button id="guardar_alumno" class="boton_guardar">Guardar</button>
+</dialog>
 
 <script>
     const abrirDialog = document.getElementById('abrirDialog');
@@ -43,11 +80,11 @@
     const dialogAlumno = document.getElementById('dialogAlumno');
 
     abrirDialog.addEventListener('click', () => {
-        dialogAlumno.showModal(); 
+        dialogAlumno.showModal();
     });
 
     cerrarDialog.addEventListener('click', () => {
-        dialogAlumno.close(); 
+        dialogAlumno.close();
     });
 
     document.getElementById("guardar_alumno").addEventListener("click", function(){

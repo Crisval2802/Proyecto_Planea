@@ -12,12 +12,18 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse
 from django.core.serializers import serialize
+from django.template.loader import render_to_string
+from django.db.models import Max, Count
+
+from weasyprint import HTML
 
 import json
-
+import datetime
 
 from .decorators import token_required
 from django.utils.decorators import method_decorator
+
+#Clases y funciones para la aplicacion web
 
 #Clases y funciones para la aplicacion web
 class Login(View):
@@ -46,8 +52,46 @@ class Inicio(View):
 class PadronAlumnos(View):
     @method_decorator(staff_member_required(login_url='login'), name='dispatch')
     def get(self, request):
-        alumnos = alumno.objects.all().order_by("id")
-        return render(request, 'padron_alumnos.html', {"alumnos":alumnos})
+        # se obtienen todos los alumnos
+        alumnos = alumno.objects.all()
+        # se construye el json con los datos de cada alumno
+        data = []
+        for auxAlumno in alumnos:
+            intentos = (
+                intento.objects.filter(idAlumno=auxAlumno)
+                .values("idExamen__id","idExamen__nombre")
+                .annotate(
+                    cantidad_intentos=Count("idExamen"),
+                    calificacion_maxima=Max("resultado"),
+                )
+            )
+            intentos_data = [
+                {
+                    "id": intento["idExamen__id"],
+                    "examen": intento["idExamen__nombre"],
+                    "cantidad_intentos": intento["cantidad_intentos"],
+                    "calificacion_maxima": intento["calificacion_maxima"],
+                }
+                for intento in intentos
+            ]
+            usuarioAlumno = User.objects.get(id=auxAlumno.idUsuario.id)
+            # Se agregan los intentos cual el alumno los tiene
+            if intentos_data:
+                data.append({
+                    "id": auxAlumno.id,
+                    "nombre": auxAlumno.nombre,
+                    "apellido": auxAlumno.apellido,
+                    "usuario": usuarioAlumno.username,
+                    "intentos": intentos_data,
+                })
+            else:
+                data.append({
+                    "id": auxAlumno.id,
+                    "nombre": auxAlumno.nombre,
+                    "apellido": auxAlumno.apellido,
+                    "usuario": usuarioAlumno.username,
+                })
+        return render(request, 'padron_alumnos.html', {"alumnos":data})
 
 class Examen(View):
     @method_decorator(staff_member_required(login_url='login'), name='dispatch')
@@ -87,7 +131,7 @@ def agregar_rama(request):
             nueva_rama.save()
             return JsonResponse({"success": True})
 
-@method_decorator(staff_member_required(login_url='login'), name='dispatch')        
+@method_decorator(staff_member_required(login_url='login'), name='dispatch')
 def agregar_examen(request):
     if request.method == "POST":
         data = json.loads(request.body)
@@ -98,7 +142,7 @@ def agregar_examen(request):
             nuevo_examen.save()
             return JsonResponse({"success": True})
 
-@method_decorator(staff_member_required(login_url='login'), name='dispatch')        
+@method_decorator(staff_member_required(login_url='login'), name='dispatch')
 def agregar_pregunta(request):
     if request.method == "POST":
         data = json.loads(request.body)
@@ -158,7 +202,6 @@ class RegistrarUsuario(View):
             user.save()
             return redirect("login")
 
-
 class RegistrarAlumno(View):
     #@method_decorator(token_required)
     def post (self,request):
@@ -177,14 +220,49 @@ class RegistrarAlumno(View):
             nuevoAlumno = alumno(nombre=nombre, apellido=apellido, idUsuario=user)
             nuevoAlumno.save()
             return JsonResponse({"success": True})
-        
+     
 #APIS para la aplicacion de flutter
+
+class API_Login(View):
+    def get(self, request, username, password):
+        
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            return JsonResponse({'message': "Credenciales correctas", 'idusuario': user.id})
+        else:
+            return JsonResponse({'message': "Credenciales incorrectas"})
+ 
+
+
 class API_Inicio(View):
-    #@method_decorator(token_required)
     def get(self, request):
-        examenes = examen.objects.all().values().order_by("id")
-        examenes = list(examenes)
-        return JsonResponse({'message': "Bienvenido", "examenes": examenes})
+        idUsuario = request.GET.get('user_id')
+
+        try:
+            auxAlumno = alumno.objects.get(idUsuario_id=idUsuario)
+
+            examenes = examen.objects.all().values().order_by("id")
+            examenes = list(examenes)
+
+            for examenaux in examenes:
+                ultimo_intento = intento.objects.filter(
+                    idAlumno_id=auxAlumno.id,
+                    idExamen_id=examenaux['id'],
+                    estatus="FINALIZADO" 
+                ).order_by('-id').first()
+
+                if ultimo_intento:
+                    examenaux['calificacion'] = ultimo_intento.resultado
+                else:
+                    examenaux['calificacion'] = 0.0
+
+            return JsonResponse({
+                'message': "Bienvenido",
+                'examenes': examenes
+            })
+
+        except alumno.DoesNotExist:
+            return JsonResponse({'message': "Error, el alumno no existe"})
 
 class API_Examen(View):
     #@method_decorator(token_required)
@@ -203,62 +281,104 @@ class API_Examen(View):
 class API_Intento(View):
 
     def get(self, request, idUsuario=0, idExamen=0):
-        if (id):
-            auxAlumno = alumno.objects.get(idUsuario=idUsuario)
-            auxExamen = examen.objects.get(id=idExamen)
-            auxExamen = model_to_dict(auxExamen)
-            intentos = intento.objects.filter(idAlumno_id=auxAlumno.id, idExamen_id=idExamen)
-            for auxIntento in intentos:
-                if auxIntento.estatus=="PENDIENTE":
-                    #Devuelve el examen y el avance para mostrarlo en la pantalla
-                    preguntas= obtenerPreguntas(idExamen)
-                    auxAvances = avances.objects.filter(idIntento_id=auxIntento.id).values()
-                    auxAvances = list(auxAvances)
-                    auxIntento=model_to_dict(auxIntento)
-                    return JsonResponse({'message': "Exito", "intento":auxIntento, "avances": auxAvances, "examen": auxExamen, "preguntas": preguntas})
-            nuevoIntento = intento(idExamen_id=idExamen, idAlumno_id=auxAlumno.id, estatus="PENDIENTE", resultado=0)
-            nuevoIntento.save()
-            nuevoIntento=model_to_dict(nuevoIntento)
-            preguntas=obtenerPreguntas(idExamen)
-            return JsonResponse({'message': "Exito","intento":nuevoIntento, "avances":[] , "examen": auxExamen, "preguntas": preguntas})
-        else:
-            return JsonResponse({'message': "Error, debe proporcionar un id"})
+        if idUsuario and idExamen:
+            try:
+                auxAlumno = alumno.objects.get(idUsuario_id=idUsuario)
+                auxExamen = examen.objects.get(id=idExamen)
+                auxExamen = model_to_dict(auxExamen)
 
-    def post(self,request):
-        jd=json.loads(request.body)
-        idIntento=jd["idIntento"]
-        auxIntento=intento.objects.get(id=idIntento)
-        resultado=0
-        #se leen todas los avances del alumno en el examen
-        auxAvances = avances.objects.filter(idIntento_id=idIntento)
-        for auxAvance in auxAvances:
-            #si la respueta colocada por el alumno es correcta se suma el contador de resultado
-            auxRespuesta = respuesta.objects.get(id=auxAvance.idPregunta)
-            if auxRespuesta.esCorrecta==True:
-                resultado+=1
-        #se saca el promedio dividiendo el resultado entre el total de preguntas
-        resultado=resultado/auxAvances.count
-        auxIntento.resultado=resultado
-        auxIntento.estatus="FINALIZADO"
-        return JsonResponse({'message': "Exito", 'resultado':resultado})
+                intento_pendiente = intento.objects.filter(idAlumno_id=auxAlumno.id, idExamen_id=idExamen, estatus="PENDIENTE").first()
+
+                if intento_pendiente:
+                    preguntas = obtenerPreguntas(idExamen)
+                    auxAvances = avances.objects.filter(idIntento_id=intento_pendiente.id).values()
+                    auxAvances = list(auxAvances)
+                    intento_pendiente = model_to_dict(intento_pendiente)
+                    return JsonResponse({
+                        'message': "Exito",
+                        "intento": intento_pendiente,
+                        "id_intento": intento_pendiente["id"],
+                        "avances": auxAvances,
+                        "examen": auxExamen,
+                        "preguntas": preguntas
+                    })
+
+                nuevoIntento = intento(idExamen_id=idExamen, idAlumno_id=auxAlumno.id, estatus="PENDIENTE", resultado=0)
+                nuevoIntento.save()
+                nuevoIntento = model_to_dict(nuevoIntento)
+
+                preguntas = obtenerPreguntas(idExamen)
+
+                return JsonResponse({
+                    'message': "Exito",
+                    "intento": nuevoIntento,
+                    "id_intento": nuevoIntento["id"],  
+                    "avances": [],
+                    "examen": auxExamen,
+                    "preguntas": preguntas
+                })
+
+            except alumno.DoesNotExist:
+                return JsonResponse({'message': "Error, el alumno no existe"})
+            except examen.DoesNotExist:
+                return JsonResponse({'message': "Error, el examen no existe"})
+        else:
+            return JsonResponse({'message': "Error, debe proporcionar un idUsuario y un idExamen"})
+
+    def post(self, request, idUsuario=0, idExamen=0):
+
+        jd = json.loads(request.body)
+        idIntento = jd["idIntento"]
+
+        try:
+            auxIntento = intento.objects.get(id=idIntento)
+            
+            resultado = 0
+
+            auxAvances = avances.objects.filter(idIntento_id=idIntento)
+            total_preguntas = auxAvances.count()
+
+            if total_preguntas == 0:
+                return JsonResponse({'message': "Error, no hay avances registrados para este intento"}, status=400)
+
+            for auxAvance in auxAvances:
+                auxRespuesta = respuesta.objects.get(id=auxAvance.idRespuesta_id)
+                if auxRespuesta.esCorrecta:
+                    resultado += 1
+
+            resultado = (resultado / total_preguntas)*10
+            resultado = round(resultado, 2)
+
+            auxIntento.resultado = resultado
+            auxIntento.estatus = "FINALIZADO"
+            auxIntento.save()
+
+            return JsonResponse({'message': "Exito", 'resultado': resultado})
+        except intento.DoesNotExist:
+            return JsonResponse({'message': "Error, el intento no existe"}, status=404)
+        except Exception as e:
+            return JsonResponse({'message': f"Error inesperado: {str(e)}"}, status=500)
+
 
 class API_Avances(View):
-    def post (self,request):
-        jd=json.loads(request.body)
-        idIntento=jd["idIntento"]
+    
+    def post(self, request):
+
+        jd = json.loads(request.body)
+        idIntento = jd["idIntento"]
         idPregunta = jd["idPregunta"]
         idRespuesta = jd["idRespuesta"]
-        auxAvances = avances.objects.filter(idIntento_id=idIntento, idPregunta_id=idPregunta)
-        #Valida que haya un avance de ese intento en esa pregunta
-        if (auxAvances):
-            #se actualiza ese avance
-            auxAvances = avances.objects.get(idIntento_id=idIntento, idPregunta_id=idPregunta)
-            auxAvances.idRespuesta=idRespuesta
+        
+        auxAvances = avances.objects.filter(idIntento_id=idIntento, idPregunta_id=idPregunta).first()
+        
+        if auxAvances:
+            auxAvances.idRespuesta_id = idRespuesta
         else:
-            #se crea ese avance
-            auxAvances = avances(idIntento_id=idIntento, idPregunta_id=idPregunta, idRespuesta_id=idRespuesta)    
+            auxAvances = avances(idIntento_id=idIntento, idPregunta_id=idPregunta, idRespuesta_id=idRespuesta)
+
         auxAvances.save()
         return JsonResponse({"message": "Exito"})
+
 
 def obtenerPreguntas(idExamen):
     respuestas_prefetch = Prefetch('respuesta_set', queryset=respuesta.objects.all(), to_attr='respuestas')
@@ -267,6 +387,46 @@ def obtenerPreguntas(idExamen):
     preguntas_list = []
     for auxPregunta in preguntas:
         pregunta_dict = model_to_dict(auxPregunta)
+        pregunta_dict['nombreRama'] = auxPregunta.idRama.nombre
         pregunta_dict['respuestas'] = [model_to_dict(resp) for resp in auxPregunta.respuestas]
         preguntas_list.append(pregunta_dict)
     return preguntas_list
+
+def generar_reporte(request, idAlumno, idExamen):
+    intentos = intento.objects.filter(idAlumno_id=idAlumno, idExamen_id=idExamen)
+    listIntentos=[]
+    listAvances=[]
+    auxExamen = examen.objects.get(id=idExamen)
+    respuestas_prefetch = Prefetch('respuesta_set', queryset=respuesta.objects.all(), to_attr='respuestas')
+    preguntas = pregunta.objects.filter(idExamen_id=auxExamen.id).prefetch_related(respuestas_prefetch) #.order_by("idRama")
+    auxExamen = model_to_dict(auxExamen)
+    preguntas=obtenerPreguntas(idExamen)
+    auxExamen["preguntas"] = preguntas
+    totalPreguntas = len(preguntas)
+    for auxIntento in intentos:
+            resultado = auxIntento.resultado
+            auxAvances = avances.objects.filter(idIntento_id=auxIntento.id).values('id', 'idIntento_id','idPregunta_id','idRespuesta_id', 'idRespuesta__descripcion')
+            auxAvances = list(auxAvances)
+            auxIntento=model_to_dict(auxIntento)
+            auxIntento["totalAciertos"] = round((resultado * totalPreguntas) / 10)
+            auxIntento["respuestas"]=auxAvances
+            listIntentos.append(auxIntento)
+            listAvances.append(auxAvances)
+    #return JsonResponse({'message': "Exito","examen": auxExamen, "intentos":listIntentos})
+    # Datos de ejemplo
+    auxAlumno = alumno.objects.get(id=idAlumno)
+    fecha = datetime.date.today().strftime('%d/%m/%Y')
+    # Renderizar la plantilla HTML con datos
+    html_string = render_to_string('reporte.html', {
+        'alumno': model_to_dict(auxAlumno),
+        'examen': auxExamen,
+        'intentos': listIntentos,
+        'fecha': fecha,
+    })
+    # Crear respuesta en PDF
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="reporte.pdf"'
+    HTML(string=html_string).write_pdf(response)
+    return response
+
+

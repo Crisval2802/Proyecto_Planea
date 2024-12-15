@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Reporte de Resultados</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        header h1 {
+            margin: 0;
+            font-size: 24px;
+            color: #333;
+        }
+        header p {
+            margin: 0;
+            font-size: 14px;
+            color: #555;
+        }
+        .info {
+            margin-bottom: 20px;
+        }
+        .info table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+        }
+        .info th, .info td {
+            text-align: left;
+            padding: 8px;
+            border: 1px solid #ddd;
+        }
+        .info th {
+            background-color: #f2f2f2;
+        }
+        .results {
+            margin-top: 20px;
+        }
+        .results table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .results th, .results td {
+            text-align: left;
+            padding: 8px;
+            border: 1px solid #ddd;
+        }
+        .results th {
+            background-color: #611232;
+            color: white;
+        }
+
+        td{
+            font-size: 10px;
+        }
+
+        th{
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Reporte de resultados del Alumno</h1>
+        <p>Generado el: {{ fecha }}</p>
+    </header>
+    <section class="info">
+        <h2>Información del Alumno</h2>
+        <table>
+            <tr>
+                <th>Nombre:</th>
+                <td>{{ alumno.nombre }} {{ alumno.apellido }}</td>
+            </tr>
+        </table>
+    </section>
+    {% for intento in intentos %}
+    <section class="results" style="page-break-after: always;">
+        <h2>Resultados del Intento {{ forloop.counter }}</h2>
+        <h3> Estatus: {{intento.estatus}}
+        <br>
+        {% if intento.estatus == "FINALIZADO" %}
+            Promedio: {{intento.resultado}}   
+            <br>Total de Aciertos: {{intento.totalAciertos}}
+        {% endif %}
+        </h3>
+        <br>
+        <table>
+            <thead>
+                <tr>
+                    <th>Pregunta</th>
+                    <th>Rama</th>
+                    <th>Respuesta Correcta</th>
+                    <th>Respuesta Alumno</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for respuesta_alumno in intento.respuestas %}
+                <tr>
+                    {% for pregunta in examen.preguntas %}
+                        {% if pregunta.id == respuesta_alumno.idPregunta_id %}
+                            <td>{{pregunta.descripcion}}</td>
+                            <td>{{pregunta.nombreRama}}</td>
+                            {% for respuesta_examen in pregunta.respuestas %}
+                                {% if respuesta_examen.esCorrecta %}
+                                    <td>{{respuesta_examen.descripcion}}</td>
+                                    <td>{{respuesta_alumno.idRespuesta__descripcion}}</td>
+                                    {% if respuesta_examen.id == respuesta_alumno.idRespuesta_id %}
+                                        <td>CORRECTA</td>
+                                    {% else %}
+                                        <td>INCORRECTA</td>
+                                    {% endif %}
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+    {% endfor %}
+</body>
+</html>

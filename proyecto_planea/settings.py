@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'pagina_web',
     'rest_framework',
     'rest_framework_simplejwt',
+    'corsheaders',
 ]
 
 REST_FRAMEWORK = {
@@ -59,6 +60,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
 ]
 
 ROOT_URLCONF = 'proyecto_planea.urls'
@@ -134,3 +136,4 @@ STATIC_URL = '/pagina_web/static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_URL="/login"
+CORS_ALLOW_ALL_ORIGINS = True
